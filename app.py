@@ -21,13 +21,15 @@ df.rename(columns={"number": "Number", "trade_type": "Trade type", "entry_time":
 def filter_df(df, exchange, leverage, start_date, end_date):
     df_filtered = df[(df['Exchange']==exchange) & (df['Margin']==int(leverage)) & (df['Entry time'] > start_date) & (df['Entry time'] < end_date)]
     df_filtered.sort_values(by='Entry time', ascending=False)
-    df_filtered['YearMonth'] = pd.to_datetime(df_filtered['Entry time'].map(lambda x: "{}-{}".format(x.year, x.month)))
+    df_filtered['YearMonth'] = df_filtered['Entry time'].map(lambda x: str(x.year)+'-'+str(x.month))
     return df_filtered
 
 #-------------INITIALIZE APP---------------------------------------------------
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/uditagarwal/pen/oNvwKNP.css', 'https://codepen.io/uditagarwal/pen/YzKbqyV.css'])
 #app = dash.Dash(__name__, external_stylesheets=['YzKbqyV.css'])
-#-------------LAYOUT-----------------------------------------------------------
+###########################################
+###########  Layout   #####################
+###########################################
 app.layout = html.Div(children=[
     html.Div(
             children=[
@@ -58,34 +60,35 @@ app.layout = html.Div(children=[
                                     )
                                 ]
                             ),
-							html.Div(
-                                className="two columns card 2",
+                            # Leverage Selector
+                            html.Div(
+                                className="two columns card",
                                 children=[
-                                    html.H6("Select Leverage",),
+                                    html.H6("Select Leverage"),
                                     dcc.RadioItems(
                                         id="leverage-select",
                                         options=[
-                                            {'label': label, 'value': label} for label in df['Margin'].unique()
+                                            {'label': str(label), 'value': str(label)}\
+                                                 for label in df['Margin'].unique()
                                         ],
                                         value='1',
                                         labelStyle={'display': 'inline-block'}
-                                    )
+                                    ),
                                 ]
                             ),
-							html.Div(
+                            html.Div(
                                 className="three columns card",
                                 children=[
-                                    html.H6("Select a Date Range",),
+                                    html.H6("Select a Date Range"),
                                     dcc.DatePickerRange(
                                         id="date-range",
-										min_date_allowed = dt.date(2017, 1, 1),
-										display_format='MM/YY',
-										start_date=df['Entry time'].min(),
-                                        end_date=df['Entry time'].max(),
-                                    )
+                                        display_format="MMM YY",
+                                        start_date=df['Entry time'].min(),
+                                        end_date=df['Entry time'].max()
+                                    ),
                                 ]
                             ),
-							html.Div(
+                            html.Div(
                                 id="strat-returns-div",
                                 className="two columns indicator pretty_container",
                                 children=[
@@ -106,7 +109,7 @@ app.layout = html.Div(children=[
                                 className="two columns indicator pretty_container",
                                 children=[
                                     html.P(id="strat-vs-market", className="indicator_value"),
-                                    html.P('Strategy vs. Market', className="twelve columns indicator_text"),
+                                    html.P('Strategy vs. Market Returns', className="twelve columns indicator_text"),
                                 ]
                             ),
                         ]
@@ -139,16 +142,11 @@ app.layout = html.Div(children=[
                                     {'name': 'Exit balance', 'id': 'Exit balance'},
                                     {'name': 'Pnl (incl fees)', 'id': 'Pnl (incl fees)'},
                                 ],
+                                style_cell={'width': '50px'},
                                 style_table={
                                     'maxHeight': '450px',
                                     'overflowY': 'scroll'
                                 },
-								fixed_rows={'headers': True, 'data': 0},
-								style_header={'backgroundColor': 'rgb(30, 30, 30)'},
-								style_cell={'width': '50px',
-											'backgroundColor': 'rgb(50, 50, 50)',
-											'color': 'white'
-								},
                             )
                         ]
                     ),
@@ -156,43 +154,54 @@ app.layout = html.Div(children=[
                         id="pnl-types",
                         className="six columns card",
                         figure={},
-						style={'height': 450, 'width': 650}
+                        style={
+                            'height':'500px'
+                        }
                     )
                 ]
             ),
-			html.Div(
+            html.Div(
                 className="padding row",
                 children=[
                     dcc.Graph(
                         id="daily-btc",
                         className="six columns card",
                         figure={},
-						style={'height': 350, 'width': 670}
+                        style={
+                            'height':'500px'
+                        }
                     ),
                     dcc.Graph(
                         id="balance",
                         className="six columns card",
                         figure={},
-						style={'height': 350, 'width': 650}
+                        style={
+                            'height':'500px'
+                        }
                     )
                 ]
-            )			
-    ])        
+            )
+        ]
+    )        
 ])
 
-#-------------CALLBACK----------------------------------------------------------
+##################################################
+###########
+##################################################
 @app.callback(
     [
         dash.dependencies.Output('date-range', 'start_date'),
         dash.dependencies.Output('date-range', 'end_date'),
     ],
-	(	
-		dash.dependencies.Input('exchange-select', 'value'),
-	)
+    (   
+        dash.dependencies.Input('exchange-select', 'value'),
+    )
 )
 def update_daterange(value):
     list = df[df['Exchange'] == value]
     return (list['Entry time'].min(), list['Entry time'].max())
+
+########################################################
 
 def calc_returns_over_month(dff):
     out = []
@@ -227,7 +236,7 @@ def calc_strat_returns(dff):
         dash.dependencies.Output('monthly-chart', 'figure'),
         dash.dependencies.Output('market-returns', 'children'),
         dash.dependencies.Output('strat-returns', 'children'),
-        dash.dependencies.Output('strat-vs-market', 'children'),
+        dash.dependencies.Output('strat-vs-market', 'children'), ###
     ],
     (
         dash.dependencies.Input('exchange-select', 'value'),
@@ -259,6 +268,9 @@ def update_monthly(exchange, leverage, start_date, end_date):
         }
     }, f'{btc_returns:0.2f}%', f'{strat_returns:0.2f}%', f'{strat_vs_market:0.2f}%'
 
+#################################################
+
+
 @app.callback(
     dash.dependencies.Output('table', 'data'),
     (
@@ -271,7 +283,7 @@ def update_monthly(exchange, leverage, start_date, end_date):
 def update_table(exchange, leverage, start_date, end_date):
     dff = filter_df(df, exchange, leverage, start_date, end_date)
     return dff.to_dict('records')
-	
+    
 @app.callback(
     dash.dependencies.Output('pnl-types', 'figure'),
     (
@@ -354,4 +366,4 @@ def update_balance(exchange, leverage, start_date, end_date, data):
     }
 #-------------RUN SERVER---------------------------------------------------------
 if __name__ == "__main__":
-    app.run_server(debug=True, host='0.0.0.0')
+    app.run_server(debug=True), host='0.0.0.0')
