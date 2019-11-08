@@ -6,7 +6,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
 from sqlalchemy import create_engine
-engine = create_engine('postgresql://postgres:Eka7dD61pEUN3KKZ8VCu@extended-case.cffzaa08iggo.us-east-2.rds.amazonaws.com/extended-case')
+engine = create_engine('postgresql://postgres:Eka7dD61pEUN3KKZ8VCu@extended-case.cffzaa08iggo.us-east-2.rds.amazonaws.com/postgres')
 df = pd.read_sql("SELECT * from extended", engine.connect(), parse_dates=('Entry time',))
 
 #dff = pd.read_csv('aggr.csv', parse_dates=['Entry time'])
