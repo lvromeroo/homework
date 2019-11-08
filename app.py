@@ -1,32 +1,28 @@
 import pandas as pd
-import datetime as dt
 import dash
-import dash_table
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
-from sqlalchemy import create_engine
+import dash_table
 
+from sqlalchemy import create_engine
 engine = create_engine('postgresql://postgres:Eka7dD61pEUN3KKZ8VCu@extended-case.cffzaa08iggo.us-east-2.rds.amazonaws.com/postgres')
 df = pd.read_sql("SELECT * from extended", engine.connect(), parse_dates=('Entry time',))
+#df = pd.read_csv('aggr.csv', parse_dates=['Entry time'])
 
 df.rename(columns={"number": "Number", "trade_type": "Trade type", "entry_time": "Entry time", "exposure":"Exposure",
                   "entry_balance":"Entry balance","exit_balance":"Exit balance","profit":"Profit",
                   "pnl_incl_fees":"Pnl (incl fees)","exchange":"Exchange","margin":"Margin","btc_price":"BTC Price"},inplace = True)
 
+app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/uditagarwal/pen/oNvwKNP.css', 'https://codepen.io/uditagarwal/pen/YzKbqyV.css'])
 
-#dff = pd.read_csv('aggr.csv', parse_dates=['Entry time'])
 
-#-------------PREDIFINED FUNCTIONS---------------------------------------------
 def filter_df(df, exchange, leverage, start_date, end_date):
-    df_filtered = df[(df['Exchange']==exchange) & (df['Margin']==int(leverage)) & (df['Entry time'] > start_date) & (df['Entry time'] < end_date)]
+    df_filtered = df[(df['Exchange']==exchange) & (df['Margin']==float(leverage)) & (df['Entry time'] > start_date) & (df['Entry time'] < end_date)]
     df_filtered.sort_values(by='Entry time', ascending=False)
     df_filtered['YearMonth'] = df_filtered['Entry time'].map(lambda x: str(x.year)+'-'+str(x.month))
     return df_filtered
 
-#-------------INITIALIZE APP---------------------------------------------------
-app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/uditagarwal/pen/oNvwKNP.css', 'https://codepen.io/uditagarwal/pen/YzKbqyV.css'])
-#app = dash.Dash(__name__, external_stylesheets=['YzKbqyV.css'])
 ###########################################
 ###########  Layout   #####################
 ###########################################
@@ -193,9 +189,9 @@ app.layout = html.Div(children=[
         dash.dependencies.Output('date-range', 'start_date'),
         dash.dependencies.Output('date-range', 'end_date'),
     ],
-    (   
-        dash.dependencies.Input('exchange-select', 'value'),
-    )
+	(	
+		dash.dependencies.Input('exchange-select', 'value'),
+	)
 )
 def update_daterange(value):
     list = df[df['Exchange'] == value]
@@ -283,7 +279,7 @@ def update_monthly(exchange, leverage, start_date, end_date):
 def update_table(exchange, leverage, start_date, end_date):
     dff = filter_df(df, exchange, leverage, start_date, end_date)
     return dff.to_dict('records')
-    
+	
 @app.callback(
     dash.dependencies.Output('pnl-types', 'figure'),
     (
@@ -364,6 +360,11 @@ def update_balance(exchange, leverage, start_date, end_date, data):
             'title': 'Balance overtime'
         }
     }
-#-------------RUN SERVER---------------------------------------------------------
+
+
+
+##################################################
+##########
+##################################################
 if __name__ == "__main__":
     app.run_server(debug=True, host='0.0.0.0')
