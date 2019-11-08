@@ -9,6 +9,11 @@ from sqlalchemy import create_engine
 engine = create_engine('postgresql://postgres:Eka7dD61pEUN3KKZ8VCu@extended-case.cffzaa08iggo.us-east-2.rds.amazonaws.com/postgres')
 df = pd.read_sql("SELECT * from extended", engine.connect(), parse_dates=('Entry time',))
 
+df.rename(columns={"number": "Number", "trade_type": "Trade type", "entry_time": "Entry time", "exposure":"Exposure",
+                  "entry_balance":"Entry balance","exit_balance":"Exit balance","profit":"Profit",
+                  "pnl_incl_fees":"Pnl (incl fees)","exchange":"Exchange","margin":"Margin","btc_price":"BTC Price"},inplace = True)
+
+
 #dff = pd.read_csv('aggr.csv', parse_dates=['Entry time'])
 
 #-------------PREDIFINED FUNCTIONS---------------------------------------------
